@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+			http://www.springframework.org/schema/context
+			http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+
+    <context:component-scan base-package="com.supersoft" />
+    <!--dango memcached-->
+    <bean id="memcachepool" class="com.danga.MemCached.SockIOPool"
+          factory-method="getInstance" init-method="initialize">
+        <constructor-arg>
+            <value>neeaMemcachedPool</value>
+        </constructor-arg>
+        <property name="servers">
+            <list>
+                <value>localhost:11211</value>
+            </list>
+        </property>
+        <property name="initConn" value="20"></property>
+        <property name="minConn" value="10"></property>
+        <property name="maxConn" value="50"></property>
+        <property name="nagle" value="false"></property>
+        <property name="socketTO">
+            <value>3000</value>
+        </property>
+    </bean>
+    <bean id="memcachedClient" class="com.danga.MemCached.MemCachedClient">
+        <constructor-arg>
+            <value>neeaMemcachedPool</value>
+        </constructor-arg>
+    </bean>
+    <!--spymemcached-->
+    <bean id="spyMemcachedClient"
+          class="net.spy.memcached.spring.MemcachedClientFactoryBean">
+        <property name="servers" value="localhost:11211"/>
+        <property name="protocol" value="BINARY"/>
+    </bean>
+    <!--xmemcached-->
+    <bean id="memcachedClientBuilder"
+            class="net.rubyeye.xmemcached.XMemcachedClientBuilder"
+            p:connectionPoolSize="50"
+            p:failureMode="true">
+        <constructor-arg>
+            <list>
+                <bean class="java.net.InetSocketAddress">
+                    <constructor-arg>
+                        <value>localhost</value>
+                    </constructor-arg>
+                    <constructor-arg>
+                        <value>11211</value>
+                    </constructor-arg>
+                </bean>
+            </list>
+        </constructor-arg>
+        <constructor-arg>
+            <list>
+                <value>1</value>
+            </list>
+        </constructor-arg>
+        <property name="commandFactory">
+            <bean class="net.rubyeye.xmemcached.command.TextCommandFactory" />
+        </property>
+        <property name="sessionLocator">
+            <bean class="net.rubyeye.xmemcached.impl.KetamaMemcachedSessionLocator" />
+        </property>
+        <property name="transcoder">
+            <bean class="net.rubyeye.xmemcached.transcoders.SerializingTranscoder" />
+        </property>
+    </bean>
+    <!-- Use factory bean to build memcached client -->
+    <bean
+            id="xMemcachedClient"
+            factory-bean="memcachedClientBuilder"
+            factory-method="build"
+            destroy-method="shutdown" />
+</beans>
